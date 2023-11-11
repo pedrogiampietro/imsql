@@ -25,13 +25,14 @@ export async function getPool() {
   return pool;
 }
 
-export async function executeSql(sql: string) {
+export async function executeSql(sql, binds = {}) {
   const connectionPool = await getPool();
   let connection;
 
   try {
     connection = await connectionPool.getConnection();
-    const result = await connection.execute(sql);
+    const options = { outFormat: oracledb.OUT_FORMAT_OBJECT }; // Opções, incluindo formato de saída
+    const result = await connection.execute(sql, binds, options); // Usa parâmetros vazios por padrão
     return result;
   } catch (err) {
     console.error("Erro ao executar SQL", err);

@@ -29,32 +29,35 @@ export default async function handler(
 ) {
   await runMiddleware(req, res, cors);
 
-  if (req.method === "GET") {
+  if (req.method === "POST") {
+    // Lida com solicitações POST
+    try {
+      const { sql } = req.body; // Assume que o SQL é passado no corpo da solicitação
+      const result = await executeSql(sql);
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Erro ao executar a consulta SQL:", error);
+      res.status(500).send("Erro interno do servidor");
+    }
+  } else if (req.method === "GET") {
+    // Lida com solicitações GET (metadados do banco de dados)
     try {
       const tablesQuery = "SELECT table_name FROM user_tables";
       const tablesResult = await executeSql(tablesQuery);
-      const tables = tablesResult.rows.map((row) => row.TABLE_NAME);
-      console.log("Tabelas mapeadas:", tables);
+      console.log("Primeira linha das tabelas:", tablesResult.rows[0]);
+      const tables = tablesResult.rows.map((row) => row.TABLE_NAME || row[0]);
 
       const columnsQuery = "SELECT column_name FROM user_tab_columns";
       const columnsResult = await executeSql(columnsQuery);
-      const columns = columnsResult.rows.map((row) => row.COLUMN_NAME);
-      console.log("Colunas mapeadas:", columns);
+      console.log("Primeira linha das colunas:", columnsResult.rows[0]);
+      const columns = columnsResult.rows.map(
+        (row) => row.COLUMN_NAME || row[0]
+      );
 
       res.status(200).json({ tables, columns });
     } catch (error) {
       console.error("Erro ao obter metadados do banco de dados:", error);
       res.status(500).send("Erro interno do servidor");
-    }
-  } else if (req.method === "POST") {
-    try {
-      // Implement your logic for POST request here
-      // For example, you might want to execute a SQL command received in the request body
-      const result = await executeSql(req.body.sql);
-      res.status(200).json(result);
-    } catch (error) {
-      console.error("Error executing SQL command:", error);
-      res.status(500).send("Internal server error");
     }
   } else {
     res.setHeader("Allow", ["GET", "POST"]);
